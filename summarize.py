@@ -8,7 +8,7 @@ import token_helper
 This will split a long text into parts long enough for ChatGPT to handle.
 It will then summarize each section to create a new text.
 This will repeat until there is only one section left to produce a long and a short summary.
-Each step is saved in it's own folder.
+Each step is saved in its own folder.
 '''
 
 # Set up OpenAI API credentials, model to use and maximum token amount for each section
