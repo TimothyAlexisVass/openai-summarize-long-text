@@ -15,6 +15,6 @@ Make sure you insert your OpenAI API-key into summarize.py (https://platform.ope
 Then you can run:
 `python3 summarize.py <path_to_long_text_file>`
 
-### With the included book.txt example file:
+### With the included example:
 
-`python3 summarize.py book.txt`
+`python3 summarize.py peter_pan.txt`

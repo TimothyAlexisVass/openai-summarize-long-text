@@ -12,21 +12,21 @@ Each step is saved in its own folder.
 '''
 
 # Set up OpenAI API credentials, model to use, and maximum token amount for each section
-openai.api_key = "YOU_API_KEY"
+openai.api_key = "YOUR_API_KEY_HERE"
 gpt_model = "gpt-3.5-turbo"
 max_tokens = 2000 # About half of the maximum tokens, which is 4096 for gpt-3.5-turbo
 rate_limit = 3 # The amount of API calls that can be made per minute
 
 # Function to split the text into sections based on token limit
 def token_split_text(text):
-    append_section = (lambda: (print(f"Tokens for section {len(sections)+1}:", tokens), sections.append(section.strip())))
-    print("="*20)
+    append_section = (lambda: (print(f"Section {len(sections)+1}: {tokens} tokens, {len(section)} characters"), sections.append(section.strip())))
 
     sections = []
     tokens = 0
     section = ""
     parts = [part + "." for part in text.split(".")]
 
+    print("="*20 + "\nSplitting text into sections")
     # Add parts to the section until it reaches the max_token limit
     while parts:
         while tokens < max_tokens and parts:
@@ -38,15 +38,16 @@ def token_split_text(text):
     return sections
 
 # Function to summarize a section using ChatGPT
-def summarize_section(section, length):
+def gpt_summarize(section, length):
     retry_count = 0
-    while retry_count < 99:
+    max_tries = 99
+    while retry_count < max_tries:
         try:
             response = openai.ChatCompletion.create(
                 model=gpt_model,
                 messages=[
-                    {"role": "system", "content": f"Please provide a {length} summary of the following text omitting chapter numbers/names, starting from the beginning and progressing through each paragraph to the end."},
-                    {"role": "user", "content": f"The text to be summarized:\n\n{section}"},
+                    {"role": "system", "content": f"Please generate a {length} summary of the following text omitting chapter numbers/names, starting from the beginning and progressing through each paragraph to the end."},
+                    {"role": "user", "content": f"Here is the text:\n\n{section}"},
                 ],
                 temperature=0.3
             )
@@ -58,20 +59,20 @@ def summarize_section(section, length):
             print("Retrying in 60 seconds...")
             time.sleep(60)
             retry_count += 1
-    print("Failed to generate summary for section:", section)
+    print(f"Failed to generate summary for section {section} after {max_tries} tries")
     exit()
 
 # Function to generate summaries for all sections
-def generate_summaries(text_parts, step_number, length="long", folder_path=None):
+def generate_summaries(text_parts, step, folder_path=None):
     summaries = []
 
     api_call_count = 0 # Handle rate_limit
     start_time = time.time()  # Track start time
 
-    print("Step", step_number)
+    print(f"\nStep {step}")
     for i, section in enumerate(text_parts):
-        print("Generating a", length, "summary for section", i+1)
-        summary = summarize_section(section, length)
+        print("Summarizing section", i+1)
+        summary = gpt_summarize(section, "" if step > 3 else "long")
         summaries.append(summary)
         api_call_count += 1
 
@@ -105,31 +106,26 @@ def main():
         initial_text = file.read()
 
     # Split the long text into sections
-    text_parts = token_split_text(initial_text)
+    sections = token_split_text(initial_text)
 
-    # Generate summaries for all sections
-    step_number = 1
-    current_summaries = generate_summaries(text_parts, step_number, folder_path=f"Step {step_number} - {len(text_parts)} sections")
+    step = 0
 
-    # Save summaries as individual text files
-    while len(current_summaries) > 1:
-        step_folder = f"Step {step_number} - {len(current_summaries)} sections"
+    while len(sections) > 1:
+        step += 1
+        step_folder = f"Step {step} - {len(sections)} sections"
 
-        new_text = "\n".join(current_summaries)
-        write_file(f"{step_folder}/Step {step_number} summary.txt", new_text)
+        # Generate summaries for all sections
+        summaries = generate_summaries(sections, step, folder_path=step_folder)
+        
+        step_summary = "\n".join(summaries)
+        write_file(f"{step_folder}/Step {step} summary.txt", step_summary)
 
-        new_text_parts = token_split_text(new_text)
+        sections = token_split_text(step_summary)
 
-        step_number += 1
-        current_summaries = generate_summaries(new_text_parts, step_number, folder_path=step_folder)
-
-    # Save the final summaries
-    step_folder = f"Step {step_number} - final summaries"
-    # Long summary
-    write_file(f"{step_folder}/Long summary.txt", current_summaries[0])
-    # Short summary
-    short_summary = generate_summaries(current_summaries, step_number, "short", folder_path=step_folder)
-    write_file(f"{step_folder}/Short summary.txt", short_summary[0])
+    print("Generating final summaries")
+    for length in ["Long", "Short", "Very short"]:
+        step_summary = gpt_summarize(step_summary, length)
+        write_file(f"Final summaries/{length} summary.txt", step_summary)
 
 if __name__ == "__main__":
     main()
