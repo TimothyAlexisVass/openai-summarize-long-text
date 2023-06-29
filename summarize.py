@@ -12,7 +12,7 @@ Each step is saved in its own folder.
 '''
 
 # Set up OpenAI API credentials, model to use, and maximum token amount for each section
-openai.api_key = "YOUR_API_KEY_HERE"
+openai.api_key = "YOUR_API_KEY"
 gpt_model = "gpt-3.5-turbo"
 max_tokens = 2000 # About half of the maximum tokens, which is 4096 for gpt-3.5-turbo
 rate_limit = 3 # The amount of API calls that can be made per minute
@@ -46,8 +46,8 @@ def gpt_summarize(section, length):
             response = openai.ChatCompletion.create(
                 model=gpt_model,
                 messages=[
-                    {"role": "system", "content": f"Please generate a {length} summary of the following text omitting chapter numbers/names, starting from the beginning and progressing through each paragraph to the end."},
-                    {"role": "user", "content": f"Here is the text:\n\n{section}"},
+                    {"role": "system", "content": "Make sure that the summary is shorter than the original text."},
+                    {"role": "user", "content": f"Please generate a {length} summary of the following text omitting chapter numbers/names, starting from the beginning and progressing through each paragraph to the end:\n\n{section}"},
                 ],
                 temperature=0.3
             )
