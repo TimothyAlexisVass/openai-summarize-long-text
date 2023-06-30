@@ -78,11 +78,9 @@ def generate_summaries(text_parts, step, folder_path=None):
         print("Summarizing section", i+1)
         if amount_of_parts > 1:
             if i == 0:
-                important_part = "beginning"
+                important_part = "first few parts of the beginning"
             elif i == amount_of_parts:
-                important_part = "ending"
-        elif amount_of_parts == 1:
-            important_part = "beginning and ending"
+                important_part = "the last few parts of the ending"
         length = "long" if step < 4 else ("" if step < 7 else "short")
         summary = gpt_summarize(*section, length, important_part)
         summaries.append(summary)
