@@ -41,7 +41,7 @@ def gpt_summarize(section_text, token_count, length="long", important_part=None)
     retry_count = 0
     max_tries = 99
     messages = [
-        {"role": "user", "content": f"Your task is to generate a {length} summary of the following text ignoring chapter numbers/names. Start from the beginning and progress through to the end.\nHere is the text:\n{section_text}"}
+        {"role": "user", "content": f"Your task is to generate a {length} summary of the following text ignoring chapter numbers/names. Start from the beginning and progress through to the end. The summary must be at most {int(token_count * 0.7)} tokens long!\nHere is the text:\n{section_text}"}
     ]
     if important_part:
         messages.append({"role": "system", "content": f"The {important_part} of the text is important and has priority."})
@@ -83,7 +83,8 @@ def generate_summaries(text_parts, step, folder_path=None):
                 important_part = "ending"
         elif amount_of_parts == 1:
             important_part = "beginning and ending"
-        summary = gpt_summarize(*section, "long", important_part)
+        length = "long" if step < 4 else ("" if step < 7 else "short")
+        summary = gpt_summarize(*section, length, important_part)
         summaries.append(summary)
         api_call_count += 1
 
